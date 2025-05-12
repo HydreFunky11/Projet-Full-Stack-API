@@ -105,7 +105,7 @@ const diceRollController = {
       if (!isGM && !isParticipant) {
         res.status(403).json({
           success: false,
-          message: "Vous devez être participant ou GM de cette session pour lancer les dés"
+          message: "Vous devez être GM de cette session pour lancer les dés"
         });
         return;
       }
@@ -238,7 +238,7 @@ const diceRollController = {
       if (!isGM && !isParticipant && !isAdmin) {
         res.status(403).json({
           success: false,
-          message: "Vous devez être participant ou GM de cette session pour voir les jets de dés"
+          message: "Vous devez être GM de cette session pour voir les jets de dés"
         });
         return;
       }
