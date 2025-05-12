@@ -57,7 +57,7 @@ const diceRollController = {
    * POST /dice-rolls
    * Corps: { expression, sessionId, characterId? }
    */
-  rollDice: async (req: Request, res: Response): Promise<void> => {
+   rollDice: async (req: Request, res: Response): Promise<void> => {
     try {
       const { expression, sessionId, characterId } = req.body;
       const userId = req.user.id;
@@ -93,23 +93,6 @@ const diceRollController = {
         return;
       }
       
-      // Vérifier que l'utilisateur est participant ou GM de la session
-      const isGM = session.gmId === userId;
-      const isParticipant = await prisma.sessionParticipants.findFirst({
-        where: {
-          sessionId,
-          userId
-        }
-      });
-      
-      if (!isGM && !isParticipant) {
-        res.status(403).json({
-          success: false,
-          message: "Vous devez être participant ou GM de cette session pour lancer les dés"
-        });
-        return;
-      }
-      
       // Si un characterId est fourni, vérifier qu'il appartient à l'utilisateur
       if (characterId) {
         const character = await prisma.character.findFirst({
@@ -128,7 +111,6 @@ const diceRollController = {
         }
       }
       
-
       // Calculer le résultat du jet de dés
       const { result, details } = calculateDiceRoll(expression);
       
@@ -184,7 +166,7 @@ const diceRollController = {
    * Voir l'historique des jets d'une session
    * GET /dice-rolls?sessionId=5
    */
-  getDiceRollsBySession: async (req: Request, res: Response): Promise<void> => {
+   getDiceRollsBySession: async (req: Request, res: Response): Promise<void> => {
     try {
       const { sessionId } = req.query;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
@@ -220,6 +202,8 @@ const diceRollController = {
         return;
       }
       
+      // SUPPRIMER OU COMMENTER LE CODE CI-DESSOUS
+      /*
       // Vérifier que l'utilisateur est participant ou GM de la session
       const userId = req.user.id;
       const isGM = session.gmId === userId;
@@ -242,6 +226,7 @@ const diceRollController = {
         });
         return;
       }
+      */
       
       // Récupérer l'historique des jets de dés
       const diceRolls = await prisma.diceRoll.findMany({
