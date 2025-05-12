@@ -15,18 +15,19 @@ const prisma = new PrismaClient();
 // Initialiser l'application Express
 const app = express();
 
-app.use(cors({
-  origin: '*',  // Autorise toutes les origines
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204
-}));
-
-// Middleware pour s'assurer que tous les en-têtes CORS sont bien présents
 app.use((req: Request, res: Response, next: NextFunction) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  // Récupérer l'origine de la requête
+  const origin = req.headers.origin || '';
+  
+  // Autoriser l'origine spécifique de Vercel et localhost
+  if (origin === process.env.FRONT_URL ||
+      origin.includes('localhost') || 
+      origin.includes('127.0.0.1')) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  
+  // Autoriser les credentials
+  res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   
