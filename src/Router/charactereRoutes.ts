@@ -1,6 +1,6 @@
 import express from 'express';
 import characterController from '../controllers/charactereController';
-import { isAuthenticated } from '../middleware';
+import { isAuthenticated , extractUserFromToken } from '../middleware';
 
 const router = express.Router();
 
@@ -25,7 +25,7 @@ router.put('/:id', isAuthenticated, characterController.updateCharacter);
 router.delete('/:id', isAuthenticated, characterController.deleteCharacter);
 
 // Personnages d'une session spécifique (GET /characters/session/:sessionId)
-router.get('/session/:sessionId', isAuthenticated, characterController.getCharactersBySession);
+router.get('/session/:sessionId', extractUserFromToken, characterController.getCharactersBySession);
 
 // Associer un personnage à une session (PUT /characters/:id/assign-session)
 router.put('/:id/assign-session', isAuthenticated, characterController.associateWithSession);

@@ -404,6 +404,7 @@ const characterController = {
    * Récupérer les personnages d'une session spécifique
    * GET /characters/session/:sessionId
    */
+    // Dans la fonction getCharactersBySession de charactereController.ts
   getCharactersBySession: async (req: Request, res: Response): Promise<void> => {
     try {
       const { sessionId } = req.params;
@@ -434,20 +435,6 @@ const characterController = {
         return;
       }
       
-      // Vérifier que l'utilisateur peut accéder à cette session
-      const isGM = session.gmId === userId;
-      const participant = session.participants.find(p => p.userId === userId);
-      const isParticipant = !!participant;
-      const isAdmin = participant?.role === 'admin';
-      
-      if (!isGM && !isParticipant && !isAdmin) {
-        res.status(403).json({
-          success: false,
-          message: "Vous n'êtes pas autorisé à voir les personnages de cette session"
-        });
-        return;
-      }
-      
       // Récupérer tous les personnages de la session
       const characters = await prisma.character.findMany({
         where: { sessionId: sessionIdNum },
@@ -474,7 +461,7 @@ const characterController = {
         error: (error as Error).message
       });
     }
-  },
+  }
   
   /**
    * Associer un personnage à une session
