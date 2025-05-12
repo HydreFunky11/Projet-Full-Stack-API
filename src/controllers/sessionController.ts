@@ -362,31 +362,17 @@ const sessionController = {
    * Ajouter un participant à une session
    * POST /sessions/:id/participants
    */
+    /**
+   * Ajouter un participant à une session
+   * POST /sessions/:id/participants
+   */
   addParticipant: async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const sessionId = parseInt(id);
-    const { userId, characterId, role } = req.body;
-    const currentUserId = req.user.id;
+    try {
+      const { id } = req.params;
+      const sessionId = parseInt(id);
+      const { userId, characterId, role } = req.body;
+      const currentUserId = req.user.id;
 
-    // Vérifications d'ID et existence de session...
-
-    // Vérifier les permissions - Modification ici
-    const isGM = session.gmId === currentUserId;
-    const isSelf = userId === currentUserId; // L'utilisateur veut s'ajouter lui-même
-    
-    // Vérifier si l'utilisateur est admin
-    const participantData = session.participants.find(p => p.userId === currentUserId);
-    const isAdmin = participantData?.role === 'admin';
-
-    // IMPORTANT: Modification de cette condition pour permettre l'auto-inscription
-    if (!isGM && !isAdmin && !isSelf) {
-      res.status(403).json({
-        success: false,
-        message: "Vous n'êtes pas autorisé à ajouter ce participant"
-      });
-      return;
-    }
       // Vérifier si l'ID est valide
       if (isNaN(sessionId)) {
         res.status(400).json({
@@ -421,17 +407,19 @@ const sessionController = {
         return;
       }
 
-      // Vérifier les permissions (seul le GM ou un admin peut ajouter des participants)
+      // Vérifier les permissions
       const isGM = session.gmId === currentUserId;
+      const isSelf = userId === currentUserId; // L'utilisateur veut s'ajouter lui-même
       
       // Vérifier si l'utilisateur est admin dans cette session spécifique
       const participantData = session.participants.find(p => p.userId === currentUserId);
       const isAdmin = participantData?.role === 'admin';
 
-      if (!isGM && !isAdmin) {
+      // Si ce n'est pas soi-même qui s'ajoute (auto-inscription), alors vérifier les permissions d'admin/GM
+      if (!isSelf && !isGM && !isAdmin) {
         res.status(403).json({
           success: false,
-          message: "Vous n'êtes pas autorisé à ajouter des participants à cette session"
+          message: "Vous n'êtes pas autorisé à ajouter ce participant"
         });
         return;
       }
@@ -489,7 +477,7 @@ const sessionController = {
           sessionId,
           userId,
           characterId,
-          role
+          role: isSelf && !isGM ? 'joueur' : role // Si c'est une auto-inscription et pas le GM, le rôle est joueur par défaut
         },
         include: {
           user: {
