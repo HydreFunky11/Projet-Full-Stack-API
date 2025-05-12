@@ -15,12 +15,29 @@ const prisma = new PrismaClient();
 // Initialiser l'application Express
 const app = express();
 
+const allowedOrigins = [
+   process.env.FRONTEND_URL,
+  'http://localhost:3000',
+]
+
 // Configuration CORS avec support pour les cookies
 app.use(cors({
-  origin: process.env.FRONT_URL || 'http://127.0.0.1:3000', // Ajoutez plusieurs origines possibles
+  origin: function(origin, callback) {
+    // Autoriser les requêtes sans origine (comme les appels API mobiles)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.warn(`Origine non autorisée: ${origin}`);
+      callback(new Error('Non autorisé par CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 // Middleware
