@@ -461,7 +461,7 @@ const characterController = {
         error: (error as Error).message
       });
     }
-  }
+  },
   
   /**
    * Associer un personnage à une session
