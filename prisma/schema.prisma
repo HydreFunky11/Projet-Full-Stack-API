@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int        @id @default(autoincrement())
+  username   String     @unique
+  email      String     @unique
+  password   String
+  createdAt  DateTime   @default(now())
+
+  characters Character[]
+  sessionsAsGM Session[] @relation("GM")
+  participations SessionParticipants[]
+  diceRolls DiceRoll[]
+}
+
+model Character {
+  id           Int                  @id @default(autoincrement())
+  name         String
+  race         String
+  class        String
+  level        Int
+  background   String?
+  inventory    Json?
+  stats        Json?
+  isAlive      Boolean              @default(true)
+
+  user         User                 @relation(fields: [userId], references: [id])
+  userId       Int
+
+  session      Session?             @relation(fields: [sessionId], references: [id])
+  sessionId    Int?
+
+  diceRolls    DiceRoll[]
+  
+  sessionParticipants SessionParticipants[]
+}
+
+model Session {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  scheduledAt DateTime?
+  status      String     // ex: "planifiée", "en cours", "terminée"
+
+  gm          User       @relation("GM", fields: [gmId], references: [id])
+  gmId        Int
+
+  participants SessionParticipants[]
+  characters   Character[]
+  diceRolls    DiceRoll[]
+}
+
+model SessionParticipants {
+  id          Int     @id @default(autoincrement())
+  session     Session @relation(fields: [sessionId], references: [id])
+  sessionId   Int
+
+  user        User    @relation(fields: [userId], references: [id])
+  userId      Int
+
+  character   Character? @relation(fields: [characterId], references: [id])
+  characterId Int?
+
+  role        String     // "joueur", "observateur", "mj-secondaire"
+}
+
+model DiceRoll {
+  id            Int       @id @default(autoincrement())
+  rollExpression String
+  result        Int
+  timestamp     DateTime  @default(now())
+
+  user          User      @relation(fields: [userId], references: [id])
+  userId        Int
+
+  character     Character? @relation(fields: [characterId], references: [id])
+  characterId   Int?
+
+  session       Session   @relation(fields: [sessionId], references: [id])
+  sessionId     Int
+
+  metadata Json?
+}
