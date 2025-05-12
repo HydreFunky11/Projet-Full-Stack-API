@@ -176,10 +176,11 @@ const sessionController = {
    * Récupérer toutes les sessions (ou filtrées)
    * GET /sessions?status=en cours&gmId=123
    */
+  // Dans Projet-Full-Stack-API/src/controllers/sessionController.ts
   getSessions: async (req: Request, res: Response): Promise<void> => {
     try {
       const { status, gmId, title } = req.query;
-      const userId = req.user.id;
+      const userId = req.user?.id; // userId peut être undefined si l'utilisateur n'est pas connecté
       
       // Construire les filtres
       const where: any = {};
@@ -206,25 +207,8 @@ const sessionController = {
           mode: 'insensitive' // Recherche insensible à la casse
         };
       }
-
-      // Vérifier si l'utilisateur est admin dans au moins une session
-      const isAdminInAnySessions = await prisma.sessionParticipants.findFirst({
-        where: {
-          userId,
-          role: 'admin'
-        }
-      });
-
-      // Si l'utilisateur n'est admin dans aucune session, voir uniquement 
-      // les sessions où il est GM ou participant
-      if (!isAdminInAnySessions) {
-        where.OR = [
-          { gmId: userId },
-          { participants: { some: { userId } } }
-        ];
-      }
-
-      // Récupérer les sessions
+      
+      // Récupérer toutes les sessions (pas de filtrage par userId)
       const sessions = await prisma.session.findMany({
         where,
         include: {
@@ -257,7 +241,7 @@ const sessionController = {
           scheduledAt: 'asc'
         }
       });
-
+  
       res.json({
         success: true,
         count: sessions.length,
