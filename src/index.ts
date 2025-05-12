@@ -17,8 +17,10 @@ const app = express();
 
 // Configuration CORS avec support pour les cookies
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
+  origin: process.env.FRONT_URL || 'http://127.0.0.1:3000', // Ajoutez plusieurs origines possibles
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Middleware
