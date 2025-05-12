@@ -72,11 +72,11 @@ const sessionController = {
    * Récupérer une session par son ID
    * GET /sessions/:id
    */
-  getSessionById: async (req: Request, res: Response): Promise<void> => {
+    getSessionById: async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
       const sessionId = parseInt(id);
-      const userId = req.user.id;
+      const userId = req.user?.id; // Ajout de ? car l'utilisateur pourrait ne pas être connecté
 
       // Vérifier si l'ID est valide
       if (isNaN(sessionId)) {
@@ -141,6 +141,8 @@ const sessionController = {
         return;
       }
 
+      // SUPPRIMEZ CETTE VÉRIFICATION - N'importe quel utilisateur connecté peut voir les sessions
+      /*
       // Vérifier si l'utilisateur a le droit de voir cette session
       // (GM, participant, ou admin)
       const isGM = session.gmId === userId;
@@ -157,6 +159,7 @@ const sessionController = {
         });
         return;
       }
+      */
 
       res.json({
         success: true,
@@ -360,12 +363,30 @@ const sessionController = {
    * POST /sessions/:id/participants
    */
   addParticipant: async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { id } = req.params;
-      const sessionId = parseInt(id);
-      const { userId, characterId, role } = req.body;
-      const currentUserId = req.user.id;
+  try {
+    const { id } = req.params;
+    const sessionId = parseInt(id);
+    const { userId, characterId, role } = req.body;
+    const currentUserId = req.user.id;
 
+    // Vérifications d'ID et existence de session...
+
+    // Vérifier les permissions - Modification ici
+    const isGM = session.gmId === currentUserId;
+    const isSelf = userId === currentUserId; // L'utilisateur veut s'ajouter lui-même
+    
+    // Vérifier si l'utilisateur est admin
+    const participantData = session.participants.find(p => p.userId === currentUserId);
+    const isAdmin = participantData?.role === 'admin';
+
+    // IMPORTANT: Modification de cette condition pour permettre l'auto-inscription
+    if (!isGM && !isAdmin && !isSelf) {
+      res.status(403).json({
+        success: false,
+        message: "Vous n'êtes pas autorisé à ajouter ce participant"
+      });
+      return;
+    }
       // Vérifier si l'ID est valide
       if (isNaN(sessionId)) {
         res.status(400).json({

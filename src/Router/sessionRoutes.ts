@@ -1,19 +1,18 @@
 import express from 'express';
 import sessionController from '../controllers/sessionController';
-import { isAuthenticated, hasRoleInSession } from '../middleware';
+import { isAuthenticated, extractUserFromToken } from '../middleware';
 
 const router = express.Router();
 
-/**
- * Routes pour la gestion des sessions de jeu
- * Toutes les routes nécessitent une authentification
- */
+// Remplacer cette ligne
+// router.get('/:id', isAuthenticated, sessionController.getSessionById);
 
-// Créer une session (POST /sessions)
-router.post('/', isAuthenticated, sessionController.createSession);
+// Par celle-ci (permettre l'accès à la session même si non authentifié)
+router.get('/:id', extractUserFromToken, sessionController.getSessionById);
 
-// Récupérer une session par son ID (GET /sessions/:id)
-router.get('/:id', isAuthenticated, sessionController.getSessionById);
+// Même chose pour la liste des sessions
+// router.get('/', isAuthenticated, sessionController.getSessions);
+router.get('/', extractUserFromToken, sessionController.getSessions);
 
 // Récupérer toutes les sessions ou filtrées (GET /sessions?status=en_cours&gmId=123&title=aventure)
 router.get('/', isAuthenticated, sessionController.getSessions);
