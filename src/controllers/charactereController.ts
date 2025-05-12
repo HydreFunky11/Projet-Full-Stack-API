@@ -11,48 +11,104 @@ const characterController = {
    * Créer un nouveau personnage
    * POST /characters
    */
-  createCharacter: async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { name, race, class: characterClass, level, background, inventory, stats } = req.body;
-      const userId = req.user.id; // L'ID de l'utilisateur connecté
+createCharacter: async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { name, race, class: characterClass, level, background, inventory, stats, sessionId } = req.body;
+    const userId = req.user.id; // L'ID de l'utilisateur connecté
 
-      // Vérifier que les champs requis sont présents
-      if (!name || !race || !characterClass || !level) {
+    // Vérifier que les champs requis sont présents
+    if (!name || !race || !characterClass || !level) {
+      res.status(400).json({
+        success: false,
+        message: "Les champs name, race, class et level sont obligatoires"
+      });
+      return;
+    }
+
+    // Vérifier si le sessionId est fourni et valide
+    let sessionIdNum = null;
+    if (sessionId) {
+      sessionIdNum = parseInt(sessionId);
+      if (isNaN(sessionIdNum)) {
         res.status(400).json({
           success: false,
-          message: "Les champs name, race, class et level sont obligatoires"
+          message: "ID de session invalide"
         });
         return;
       }
 
-      // Créer le personnage
-      const character = await prisma.character.create({
-        data: {
-          name,
-          race,
-          class: characterClass,
-          level,
-          background,
-          inventory,
-          stats,
+      // Vérifier si la session existe
+      const session = await prisma.session.findUnique({
+        where: { id: sessionIdNum }
+      });
+
+      if (!session) {
+        res.status(404).json({
+          success: false,
+          message: "Session non trouvée"
+        });
+        return;
+      }
+    }
+
+    // Créer le personnage
+    const character = await prisma.character.create({
+      data: {
+        name,
+        race,
+        class: characterClass,
+        level,
+        background,
+        inventory,
+        stats,
+        userId,
+        sessionId: sessionIdNum
+      }
+    });
+
+    // Si une session est spécifiée, ajouter l'utilisateur comme participant s'il ne l'est pas déjà
+    if (sessionIdNum) {
+      // Vérifier si l'utilisateur est déjà participant
+      const existingParticipant = await prisma.sessionParticipants.findFirst({
+        where: {
+          sessionId: sessionIdNum,
           userId
         }
       });
 
-      res.status(201).json({
-        success: true,
-        message: "Personnage créé avec succès",
-        character
-      });
-    } catch (error) {
-      console.error("Erreur lors de la création du personnage:", error);
-      res.status(500).json({
-        success: false,
-        message: "Erreur lors de la création du personnage",
-        error: (error as Error).message
-      });
+      if (!existingParticipant) {
+        // Ajouter l'utilisateur comme participant avec le rôle "joueur"
+        await prisma.sessionParticipants.create({
+          data: {
+            sessionId: sessionIdNum,
+            userId,
+            characterId: character.id,
+            role: 'joueur'
+          }
+        });
+      } else if (!existingParticipant.characterId) {
+        // Mettre à jour l'entrée existante pour ajouter le personnage
+        await prisma.sessionParticipants.update({
+          where: { id: existingParticipant.id },
+          data: { characterId: character.id }
+        });
+      }
     }
-  },
+
+    res.status(201).json({
+      success: true,
+      message: "Personnage créé avec succès",
+      character
+    });
+  } catch (error) {
+    console.error("Erreur lors de la création du personnage:", error);
+    res.status(500).json({
+      success: false,
+      message: "Erreur lors de la création du personnage",
+      error: (error as Error).message
+    });
+  }
+},
 
   /**
    * Récupérer un personnage par son ID
